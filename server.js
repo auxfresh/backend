@@ -1,33 +1,32 @@
-// server.js
-import express from "express";
-import cors from "cors";
-import bodyParser from "body-parser";
-import { Configuration, OpenAIApi } from "openai";
+const express = require('express');
+const dotenv = require('dotenv');
+const { OpenAI } = require('openai');
+const cors = require('cors');
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY, // You will define this later
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
-app.post("/chat", async (req, res) => {
-  const { messages } = req.body;
-
+app.post('/chat', async (req, res) => {
+  const userMessage = req.body.message;
   try {
-    const response = await openai.createChatCompletion({
+    const chat = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages,
+      messages: [{ role: "user", content: userMessage }],
     });
 
-    res.json({ message: response.data.choices[0].message });
+    res.json({ reply: chat.choices[0].message.content });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Something went wrong." });
+    res.status(500).send("Something went wrong");
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on http://localhost:${port}`));
+app.listen(process.env.PORT || 3000, () => {
+  console.log('Server running');
+});
